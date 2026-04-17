@@ -42,18 +42,15 @@ class TestTodaySummary:
 class TestDateBoundary:
     def test_records_across_dates(self):
         """日付またぎ: 昨日の記録は今日の集計に含まれない。"""
-        current_time = datetime(2026, 4, 17, 0, 30)
-        stats = PomodoroStats(clock=lambda: current_time)
-
-        # 昨日の記録を追加（時刻を昨日に設定）
-        current_time = datetime(2026, 4, 16, 23, 30)
-        stats = PomodoroStats(clock=lambda: current_time)
-        stats.record_completion(1500)
-
-        # 今日に切り替え
-        current_time = datetime(2026, 4, 17, 0, 30)
-        stats._clock = lambda: current_time
-        stats.record_completion(1500)
+        times = iter([
+            datetime(2026, 4, 16, 23, 30),  # record_completion (昨日)
+            datetime(2026, 4, 17, 0, 30),    # record_completion (今日)
+            datetime(2026, 4, 17, 0, 30),    # today_summary
+        ])
+        clock = lambda: next(times)
+        stats = PomodoroStats(clock=clock)
+        stats.record_completion(1500)  # 昨日の記録
+        stats.record_completion(1500)  # 今日の記録
 
         summary = stats.today_summary()
         assert summary["completed_count"] == 1
